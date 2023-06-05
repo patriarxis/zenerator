@@ -2,6 +2,9 @@ import random
 import nltk
 import re
 from nltk.corpus import cmudict
+from nltk import pos_tag
+from nltk.tokenize import word_tokenize
+from ai.models import model
 
 nltk.download('cmudict')
 pronouncing_dict = cmudict.dict()
@@ -31,27 +34,35 @@ def count_syllables(word):
 def generate_line(words, syllables):
     line = []
     while syllables > 0:
-        word = random.choice(words)
-        syllable_count = count_syllables(word)
+        next_word = model.select_next_word(words, syllables)
+        if not next_word:
+            break
+
+        syllable_count = model.count_syllables(next_word)
 
         if syllable_count <= syllables:
-            line.append(word)
+            line.append(next_word)
             syllables -= syllable_count
 
     return ' '.join(line)
 
 
 def generate_haiku_from_text(text_input):
-    words = text_input.split()
+    generated_text = model.generate(text_input)
+    generated_words = word_tokenize(generated_text)
+    pos_tags = pos_tag(generated_words)
+    relevant_words = [word for word, pos in pos_tags if pos.startswith(
+        'N') or pos.startswith('V') or pos.startswith('J')]
+
     haiku = []
 
-    line = generate_line(words, 5)
+    line = generate_line(relevant_words, 5)
     haiku.append(line)
 
-    line = generate_line(words, 7)
+    line = generate_line(relevant_words, 7)
     haiku.append(line)
 
-    line = generate_line(words, 5)
+    line = generate_line(relevant_words, 5)
     haiku.append(line)
 
     return '\n'.join(haiku)
