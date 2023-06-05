@@ -1,11 +1,11 @@
 import pandas as pd
 
-csv_file = 'haikus.csv'
+csv_file = 'poetry.csv'
 df = pd.read_csv(csv_file)
 
-haikus = df['Haiku'].tolist()
+poems = df['Poem'].tolist()
 
-text_file = 'haikus.txt'
+text_file = 'poems.txt'
 with open(text_file, 'w') as file:
-    for haiku in haikus:
-        file.write(haiku + '\n-\n')
+    for poem in poems:
+        file.write(poem + '\n-\n')

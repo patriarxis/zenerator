@@ -4,32 +4,32 @@ import numpy as np
 padding_token = "<PAD>"
 
 
-def tokenize_haikus(haikus):
-    tokenized_haikus = []
-    for haiku in haikus:
-        tokens = haiku.split()
+def tokenize_poems(poems):
+    tokenized_poems = []
+    for poem in poems:
+        tokens = poem.lower().split()
         filtered_tokens = [token.strip(string.punctuation) for token in tokens]
         filtered_tokens = [token for token in filtered_tokens if token]
-        tokenized_haikus.append(filtered_tokens)
-    return tokenized_haikus
+        tokenized_poems.append(filtered_tokens)
+    return tokenized_poems
 
 
-def create_vocabulary(tokenized_haikus):
+def create_vocabulary(tokenized_poems):
     vocabulary = {}
-    for haiku in tokenized_haikus:
-        for token in haiku:
+    for poem in tokenized_poems:
+        for token in poem:
             if token not in vocabulary:
                 vocabulary[token] = len(vocabulary)
     return vocabulary
 
 
-def create_sequences(tokenized_haikus, sequence_length):
+def create_sequences(tokenized_poems, sequence_length):
     input_sequences = []
     output_sequences = []
-    for haiku in tokenized_haikus:
-        for i in range(len(haiku) - sequence_length):
-            input_seq = haiku[i:i+sequence_length]
-            output_seq = haiku[i+sequence_length]
+    for poem in tokenized_poems:
+        for i in range(len(poem) - sequence_length):
+            input_seq = poem[i:i+sequence_length]
+            output_seq = poem[i+sequence_length]
             input_sequences.append(input_seq)
             output_sequences.append(output_seq)
     print(input_sequences, output_sequences)
@@ -48,28 +48,28 @@ def pad_sequences(sequences, max_sequence_length):
     return padded_sequences
 
 
-with open('../datasets/haikus.txt', 'r') as file:
+with open('../datasets/poems.txt', 'r') as file:
     lines = file.readlines()
 
 
-haikus = []
-current_haiku = []
+poems = []
+current_poem = []
 for line in lines:
     line = line.strip()
-    if line == '-' and current_haiku:
-        if current_haiku:
-            haikus.append(' '.join(current_haiku))
-            current_haiku = []
+    if line == '-' and current_poem:
+        if current_poem:
+            poems.append(' '.join(current_poem))
+            current_poem = []
     else:
-        current_haiku.append(line)
+        current_poem.append(line)
 
 
-tokenized_haikus = tokenize_haikus(haikus)
-vocabulary = create_vocabulary(tokenized_haikus)
+tokenized_poems = tokenize_poems(poems)
+vocabulary = create_vocabulary(tokenized_poems)
 
 sequence_length = 10
 input_sequences, output_sequences = create_sequences(
-    tokenized_haikus, sequence_length)
+    tokenized_poems, sequence_length)
 padded_input_sequences = pad_sequences(input_sequences, sequence_length)
 
 preprocessed_data = {
@@ -78,4 +78,6 @@ preprocessed_data = {
     'vocabulary': vocabulary
 }
 
-np.save('../datasets/preprocessed_haikus.npy', preprocessed_data)
+print(vocabulary)
+
+np.save('../datasets/preprocessed_poems.npy', preprocessed_data)
