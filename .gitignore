@@ -1,6 +1,5 @@
+__pycache__
 haiku/test.py
-ai/__pycache__
-ai/utils/__pycache__
 ai/glove/glove_embeddings.npy
 ai/glove/glove.840B.300d.txt
 ai/datasets/datasets.npy
