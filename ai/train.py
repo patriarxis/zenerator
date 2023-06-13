@@ -1,68 +1,33 @@
+import os
+import json
 import numpy as np
-import tensorflow as tf
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.layers import Embedding, LSTM, Dense
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.callbacks import ModelCheckpoint
-from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import ModelCheckpoint, EarlyStopping
+from utils.model import create_model
 
-dataset = np.load('datasets/preprocessed_poems.npy', allow_pickle=True).item()
-input_sequences = dataset['input_sequences']
-output_sequences = dataset['output_sequences']
-vocabulary = dataset['vocabulary']
+absolute_path = os.path.dirname(__file__)
 
-train_size = int(0.8 * len(input_sequences))
-train_data = input_sequences[:train_size]
-train_labels = output_sequences[:train_size]
-val_data = input_sequences[train_size:]
-val_labels = output_sequences[train_size:]
+datasets_path = os.path.join(absolute_path, 'datasets/datasets.npy')
+datasets = np.load(datasets_path, allow_pickle=True).item()
+train_data = datasets['train_data']
+train_labels = datasets['train_labels']
+val_data = datasets['val_data']
+val_labels = datasets['val_labels']
 
-vocab_size = len(vocabulary)
-embedding_dim = 100
-seq_length = len(train_data[0])
-num_epochs = 10
-batch_size = 32
+params_path = os.path.join(absolute_path, 'params.json')
+with open(params_path, 'r') as f:
+    params = json.load(f)
 
-train_data = [[vocabulary.get(token) for token in poem] for poem in train_data]
-train_labels = [vocabulary.get(token) for token in train_labels]
-val_data = [[vocabulary.get(token) for token in poem] for poem in val_data]
-val_labels = [vocabulary.get(token) for token in val_labels]
+batch_size = params['batch_size']
+dropout = params['dropout']
+epochs = params['epochs']
 
-train_data = pad_sequences(train_data, maxlen=seq_length, padding='post')
-val_data = pad_sequences(val_data, maxlen=seq_length, padding='post')
+final_model_path = os.path.join(absolute_path, 'models/poetry_model_v2.h5')
+best_model = create_model(dropout)
+best_model.fit(train_data, train_labels,
+               validation_data=(val_data, val_labels),
+               callbacks=[ModelCheckpoint(final_model_path, save_best_only=True),
+                          EarlyStopping(patience=3)],
+               epochs=epochs,
+               batch_size=batch_size)
 
-train_labels = to_categorical(train_labels, num_classes=vocab_size)
-val_labels = to_categorical(val_labels, num_classes=vocab_size)
-
-model = Sequential()
-model.add(Embedding(input_dim=vocab_size,
-          output_dim=embedding_dim, input_length=seq_length))
-model.add(LSTM(units=128, return_sequences=True))
-model.add(LSTM(units=128))
-model.add(Dense(units=vocab_size, activation='softmax'))
-
-model.compile(loss='categorical_crossentropy', optimizer='adam')
-
-checkpoint_callback = ModelCheckpoint(
-    'models/poetry_model.h5', save_best_only=True)
-
-batch_size = 32
-num_batches = int(np.ceil(len(train_data) / batch_size))
-for epoch in range(num_epochs):
-    for batch in range(num_batches):
-        start_idx = batch * batch_size
-        end_idx = min((batch + 1) * batch_size, len(train_data))
-        batch_data = train_data[start_idx:end_idx]
-        batch_labels = train_labels[start_idx:end_idx]
-
-        model.fit(batch_data, batch_labels, epochs=1,
-                  batch_size=batch_size, verbose=1)
-
-    loss, accuracy = model.evaluate(val_data, val_labels,
-                                    batch_size=batch_size, verbose=0)
-    print(
-        f'Epoch {epoch+1} - Validation Loss: {loss:.4f} - Validation Accuracy: {accuracy:.4f}')
-
-    model.save_weights(f'models/poetry_model_epoch{epoch+1}.h5')
-
-model.save('models/final_poetry_model.h5')
+best_model.save(final_model_path)

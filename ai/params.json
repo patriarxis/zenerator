@@ -1,0 +1,1 @@
+{"vocab_size": 12196, "seq_length": 15, "batch_size": 16, "embedding_dim": 300, "units": 128, "dropout": 0.2, "epochs": 5}
