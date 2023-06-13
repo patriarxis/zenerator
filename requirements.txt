@@ -2,3 +2,7 @@ Flask
 nltk
 requests
 PyGithub
+numpy
+tensorflow
+scikit-learn
+scikeras
